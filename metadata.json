@@ -1,0 +1,6 @@
+{
+  "name": "Money Mitra",
+  "description": "Money Mitra - A Material 3 Android Personal Finance Tracker with local Room SQLite storage, voice entry, Telugu & English bilingual support, and financial reports.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

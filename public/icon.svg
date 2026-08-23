@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#005cb2"/>
+      <stop offset="100%" stop-color="#003566"/>
+    </linearGradient>
+    <linearGradient id="accent-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#818cf8"/>
+    </linearGradient>
+  </defs>
+  <!-- Rounded App Icon Background -->
+  <rect width="512" height="512" rx="112" fill="url(#bg-grad)"/>
+  
+  <!-- Subtle inner glow / decorative circle -->
+  <circle cx="256" cy="256" r="180" fill="white" fill-opacity="0.06"/>
+  <circle cx="256" cy="256" r="140" fill="white" fill-opacity="0.04"/>
+  
+  <!-- Indian Rupee Symbol Symbolizing Finance -->
+  <path d="M190 140 H322 M190 190 H300 M190 140 V230 C230 230 270 230 280 200 C290 160 250 140 250 140 M190 230 H240 L315 372 M190 230 H160" stroke="#ffffff" stroke-width="32" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  
+  <!-- Little Sparkle / Diamond -->
+  <path d="M360 120 L368 144 L392 152 L368 160 L360 184 L352 160 L328 152 L352 144 Z" fill="#38bdf8"/>
+</svg>
