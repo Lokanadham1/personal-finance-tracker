@@ -53,6 +53,10 @@ export interface Translations {
   startDate: string;
   endDate: string;
   exportCsv: string;
+  recentSearches: string;
+  clearRecentSearches: string;
+  quickFilters: string;
+  searchHistoryEmpty: string;
   swipeHint: string;
   noMatchingTransactions: string;
   tryAdjustingFilters: string;
@@ -139,6 +143,13 @@ export interface Translations {
   storageType: string;
   totalRecordsStored: string;
   exportCsvBtn: string;
+  exportCsvSectionTitle: string;
+  exportCsvSectionDesc: string;
+  exportCurrentScopeLabel: string;
+  exportAllScopeLabel: string;
+  exportToAndroidStorageBtn: string;
+  shareViaAndroidBtn: string;
+  androidStorageLocationNote: string;
   exportBackupBtn: string;
   importBackupBtn: string;
   resetSampleBtn: string;
@@ -173,6 +184,71 @@ export interface Translations {
   shareViaApp: string;
   apkSourceCodeNotice: string;
   freeForeverNotice: string;
+
+  // Business Tracker / Orders & Finance
+  navBusiness: string;
+  subBusiness: string;
+  ordersTab: string;
+  expensesTab: string;
+  incomeTab: string;
+  investmentTab: string;
+  addNewOrder: string;
+  editOrder: string;
+  customerName: string;
+  orderDate: string;
+  itemDetails: string;
+  quantity: string;
+  orderPrice: string;
+  orderStatus: string;
+  statusPending: string;
+  statusInProgress: string;
+  statusCompleted: string;
+  statusDelivered: string;
+  noOrdersFound: string;
+  createFirstOrder: string;
+  linkedExpenses: string;
+  orderProfit: string;
+  addExpenseForOrder: string;
+  addNewExpense: string;
+  editExpense: string;
+  orderReference: string;
+  selectOrder: string;
+  expenseType: string;
+  expenseTypeGroceries: string;
+  expenseTypePackaging: string;
+  expenseTypeDelivery: string;
+  expenseTypeOther: string;
+  expenseAmount: string;
+  expenseDate: string;
+  totalOrderExpenses: string;
+  noExpensesFound: string;
+  incomeFormula: string;
+  periodDaily: string;
+  periodWeekly: string;
+  periodMonthly: string;
+  periodAllTime: string;
+  totalBusinessIncome: string;
+  grossRevenue: string;
+  totalOrderExpensesSummary: string;
+  averageMargin: string;
+  addNewInvestment: string;
+  editInvestment: string;
+  investmentAmount: string;
+  investmentDate: string;
+  investmentPurpose: string;
+  totalInvestmentToDate: string;
+  investmentSummaryTitle: string;
+  netProfit: string;
+  netLoss: string;
+  roi: string;
+  noInvestmentsFound: string;
+  exportBusinessCsv: string;
+  exportBusinessCsvDesc: string;
+  exportScopeAllBiz: string;
+  exportScopeOrdersOnly: string;
+  exportScopeExpensesOnly: string;
+  exportCsvSaved: string;
+  exportCsvShared: string;
 }
 
 export const translations: Record<Language, Translations> = {
@@ -229,6 +305,10 @@ export const translations: Record<Language, Translations> = {
     startDate: 'Start Date',
     endDate: 'End Date',
     exportCsv: 'Export CSV',
+    recentSearches: 'Recent Searches',
+    clearRecentSearches: 'Clear',
+    quickFilters: 'Common Categories',
+    searchHistoryEmpty: 'No recent searches yet',
     swipeHint: 'Swipe card left to delete • Tap for full details',
     noMatchingTransactions: 'No matching transactions found',
     tryAdjustingFilters: 'Try adjusting your search query, type filter, or date range.',
@@ -295,8 +375,8 @@ export const translations: Record<Language, Translations> = {
     transactionsCount: 'transactions',
 
     // Voice Command Widget
-    voiceTitle: 'Voice Entry (Web Speech API)',
-    aiVoiceBadge: 'AI Voice',
+    voiceTitle: 'Voice Entry (Offline Web Speech)',
+    aiVoiceBadge: 'Voice',
     voiceSubtitle: 'Speak naturally like "Spent 500 on dinner for food"',
     examples: 'Examples',
     listening: 'Listening... Speak your transaction now',
@@ -315,6 +395,13 @@ export const translations: Record<Language, Translations> = {
     storageType: 'Storage Engine',
     totalRecordsStored: 'Total Transactions Stored',
     exportCsvBtn: 'Export All Data to CSV (Excel / Spreadsheet)',
+    exportCsvSectionTitle: 'Export CSV to Android Storage',
+    exportCsvSectionDesc: 'Export current or all transactions as a CSV file directly to your Android device.',
+    exportCurrentScopeLabel: 'Current History',
+    exportAllScopeLabel: 'All Transactions',
+    exportToAndroidStorageBtn: 'Export to CSV',
+    shareViaAndroidBtn: 'Share / Open in Android Sheets',
+    androidStorageLocationNote: 'Directly saves to /storage/emulated/0/Download/ on your Android phone.',
     exportBackupBtn: 'Export JSON Backup File',
     importBackupBtn: 'Import JSON Backup File',
     resetSampleBtn: 'Reset to Sample Data',
@@ -349,6 +436,71 @@ export const translations: Record<Language, Translations> = {
     shareViaApp: 'Share via WhatsApp / Phone',
     apkSourceCodeNotice: 'Includes full Kotlin & Jetpack Compose native source code for Android Studio.',
     freeForeverNotice: 'Completely free forever • 100% offline & private • No subscription required',
+
+    // Business Tracker / Orders & Finance
+    navBusiness: 'Business Tracker',
+    subBusiness: 'Orders, Expenses & Profit',
+    ordersTab: 'Orders',
+    expensesTab: 'Expenses',
+    incomeTab: 'Income & Profit',
+    investmentTab: 'Investments',
+    addNewOrder: 'New Order',
+    editOrder: 'Edit Order',
+    customerName: 'Customer Name',
+    orderDate: 'Order Date',
+    itemDetails: 'Item / Product Details',
+    quantity: 'Quantity (e.g. 50 Plates)',
+    orderPrice: 'Order Price (₹ Received)',
+    orderStatus: 'Order Status',
+    statusPending: 'Pending',
+    statusInProgress: 'In Progress',
+    statusCompleted: 'Completed',
+    statusDelivered: 'Delivered',
+    noOrdersFound: 'No orders recorded yet',
+    createFirstOrder: 'Add your first customer order to track revenue, expenses, and net profit.',
+    linkedExpenses: 'Linked Expenses',
+    orderProfit: 'Order Net Income',
+    addExpenseForOrder: 'Add Expense for Order',
+    addNewExpense: 'New Expense',
+    editExpense: 'Edit Expense',
+    orderReference: 'Linked Order',
+    selectOrder: 'Select Order...',
+    expenseType: 'Expense Type',
+    expenseTypeGroceries: 'Groceries / Raw Materials',
+    expenseTypePackaging: 'Packaging',
+    expenseTypeDelivery: 'Delivery',
+    expenseTypeOther: 'Other',
+    expenseAmount: 'Expense Amount (₹)',
+    expenseDate: 'Expense Date',
+    totalOrderExpenses: 'Total Expense for Order',
+    noExpensesFound: 'No order expenses recorded yet',
+    incomeFormula: 'Income = Order Price − Total Expenses for each order',
+    periodDaily: 'Daily (Today)',
+    periodWeekly: 'This Week',
+    periodMonthly: 'This Month',
+    periodAllTime: 'All Time',
+    totalBusinessIncome: 'Total Net Income',
+    grossRevenue: 'Total Order Value (Gross)',
+    totalOrderExpensesSummary: 'Total Order Expenses',
+    averageMargin: 'Net Profit Margin',
+    addNewInvestment: 'New Investment',
+    editInvestment: 'Edit Investment',
+    investmentAmount: 'Investment Amount (₹)',
+    investmentDate: 'Investment Date',
+    investmentPurpose: 'Purpose / Description (e.g., Equipment, Stock, Packaging)',
+    totalInvestmentToDate: 'Total Investment till Date',
+    investmentSummaryTitle: 'Total Investment vs Total Income vs Net Profit',
+    netProfit: 'Net Profit',
+    netLoss: 'Net Deficit',
+    roi: 'ROI (Income / Investment)',
+    noInvestmentsFound: 'No business investments recorded yet',
+    exportBusinessCsv: 'Export Business CSV',
+    exportBusinessCsvDesc: 'Save all your orders and expense records as an Excel-compatible CSV file.',
+    exportScopeAllBiz: 'All Data (Orders, Expenses & Profit)',
+    exportScopeOrdersOnly: 'Orders Only',
+    exportScopeExpensesOnly: 'Expenses Only',
+    exportCsvSaved: 'Business CSV saved successfully',
+    exportCsvShared: 'Business CSV shared successfully',
   },
 
   te: {
@@ -404,6 +556,10 @@ export const translations: Record<Language, Translations> = {
     startDate: 'ప్రారంభ తేదీ',
     endDate: 'ముగింపు తేదీ',
     exportCsv: 'CSV ఎగుమతి',
+    recentSearches: 'ఇటీవలి శోధనలు',
+    clearRecentSearches: 'తొలగించు',
+    quickFilters: 'సాధారణ వర్గాలు',
+    searchHistoryEmpty: 'ఇటీవలి శోధనలు ఇంకా లేవు',
     swipeHint: 'తొలగించడానికి కార్డ్‌ను ఎడమవైపుకు స్వైప్ చేయండి • వివరాల కోసం నొక్కండి',
     noMatchingTransactions: 'ఎటువంటి లావాదేవీలు కనుగొనబడలేదు',
     tryAdjustingFilters: 'మీ శోధన లేదా ఫిల్టర్లను మార్చి మళ్లీ ప్రయత్నించండి.',
@@ -470,8 +626,8 @@ export const translations: Record<Language, Translations> = {
     transactionsCount: 'లావాదేవీలు',
 
     // Voice Command Widget
-    voiceTitle: 'వాయిస్ ఎంట్రీ (Web Speech API)',
-    aiVoiceBadge: 'AI వాయిస్',
+    voiceTitle: 'వాయిస్ ఎంట్రీ (ఆఫ్‌లైన్ స్పీచ్)',
+    aiVoiceBadge: 'వాయిస్',
     voiceSubtitle: 'సహజంగా మాట్లాడండి: "Spent 500 on dinner for food" లేదా "భోజనం కోసం 500 ఖర్చు"',
     examples: 'ఉదాహరణలు',
     listening: 'వింటున్నాము... మీ లావాదేవీని మాట్లాడండి',
@@ -490,6 +646,13 @@ export const translations: Record<Language, Translations> = {
     storageType: 'స్టోరేజ్ ఇంజిన్',
     totalRecordsStored: 'నిల్వ చేయబడిన మొత్తం లావాదేవీలు',
     exportCsvBtn: 'మొత్తం డేటాను CSV లోకి ఎగుమతి చేయండి (Excel / స్ప్రెడ్‌షీట్)',
+    exportCsvSectionTitle: 'Android స్టోరేజ్ లోకి CSV ని ఎగుమతి చేయండి',
+    exportCsvSectionDesc: 'ప్రస్తుత లేదా మొత్తం లావాదేవీలను నేరుగా మీ Android ఫోన్ ఫైల్ సిస్టమ్‌లోకి CSV ఫైల్‌గా భద్రపరచండి.',
+    exportCurrentScopeLabel: 'ప్రస్తుత చరిత్ర',
+    exportAllScopeLabel: 'మొత్తం లావాదేవీలు',
+    exportToAndroidStorageBtn: 'CSV కి ఎగుమతి చేయండి (Export to CSV)',
+    shareViaAndroidBtn: 'Android షీట్స్‌లో తెరవండి / షేర్ చేయండి',
+    androidStorageLocationNote: 'మీ Android ఫోన్‌లోని /storage/emulated/0/Download/ లోకి నేరుగా సేవ్ అవుతుంది.',
     exportBackupBtn: 'JSON బ్యాకప్ ఫైల్‌ను డౌన్‌లోడ్ చేయండి',
     importBackupBtn: 'JSON బ్యాకప్ ఫైల్‌ను అప్‌లోడ్ చేయండి',
     resetSampleBtn: 'నమూనా డేటాకు రీసెట్ చేయండి',
@@ -524,6 +687,71 @@ export const translations: Record<Language, Translations> = {
     shareViaApp: 'WhatsApp / ఫోన్ ద్వారా షేర్ చేయండి',
     apkSourceCodeNotice: 'Android Studio కోసం పూర్తి Kotlin & Jetpack Compose నేటివ్ సోర్స్ కోడ్ చేర్చబడింది.',
     freeForeverNotice: 'ఎప్పటికీ పూర్తిగా ఉచితం • 100% ఆఫ్‌లైన్ & ప్రైవేట్ • ఎలాంటి సబ్‌స్క్రిప్షన్ అవసరం లేదు',
+
+    // Business Tracker / Orders & Finance
+    navBusiness: 'ఆర్డర్లు & వ్యాపారం',
+    subBusiness: 'ఆర్డర్లు, ఖర్చులు & లాభాల ట్రాకర్',
+    ordersTab: 'ఆర్డర్లు',
+    expensesTab: 'ఖర్చులు',
+    incomeTab: 'ఆదాయం & లాభం',
+    investmentTab: 'పెట్టుబడులు',
+    addNewOrder: 'కొత్త ఆర్డర్',
+    editOrder: 'ఆర్డర్ సవరించండి',
+    customerName: 'కస్టమర్ పేరు',
+    orderDate: 'ఆర్డర్ తేదీ',
+    itemDetails: 'వస్తువు / మెనూ వివరాలు',
+    quantity: 'పరిమాణం (ఉదా: 50 ప్లేట్లు)',
+    orderPrice: 'ఆర్డర్ ధర (₹ చెల్లింపు)',
+    orderStatus: 'ఆర్డర్ స్థితి',
+    statusPending: 'వేచి ఉంది (Pending)',
+    statusInProgress: 'పురోగతిలో ఉంది (In Progress)',
+    statusCompleted: 'పూర్తయింది (Completed)',
+    statusDelivered: 'డెలివరీ చేయబడింది (Delivered)',
+    noOrdersFound: 'ఇంకా ఎలాంటి ఆర్డర్లు నమోదు కాలేదు',
+    createFirstOrder: 'ఆదాయం, ఖర్చులు మరియు నికర లాభాన్ని ట్రాక్ చేయడానికి మీ మొదటి కస్టమర్ ఆర్డర్‌ను జోడించండి.',
+    linkedExpenses: 'సంబంధిత ఖర్చులు',
+    orderProfit: 'ఆర్డర్ నికర ఆదాయం',
+    addExpenseForOrder: 'ఈ ఆర్డర్ కోసం ఖర్చును జోడించండి',
+    addNewExpense: 'కొత్త ఖర్చు',
+    editExpense: 'ఖర్చు సవరించండి',
+    orderReference: 'లింక్ చేయబడిన ఆర్డర్',
+    selectOrder: 'ఆర్డర్‌ను ఎంచుకోండి...',
+    expenseType: 'ఖర్చు రకం',
+    expenseTypeGroceries: 'కిరాణా / ముడి పదార్థాలు',
+    expenseTypePackaging: 'ప్యాకేజింగ్',
+    expenseTypeDelivery: 'డెలివరీ / రవాణా',
+    expenseTypeOther: 'ఇతర ఖర్చులు',
+    expenseAmount: 'ఖర్చు మొత్తం (₹)',
+    expenseDate: 'ఖర్చు తేదీ',
+    totalOrderExpenses: 'ఈ ఆర్డర్ మొత్తం ఖర్చు',
+    noExpensesFound: 'ఇంకా ఆర్డర్ ఖర్చులు నమోదు కాలేదు',
+    incomeFormula: 'ఆదాయం = ఆర్డర్ ధర − ప్రతి ఆర్డర్ మొత్తం ఖర్చులు',
+    periodDaily: 'ఈ రోజు (Daily)',
+    periodWeekly: 'ఈ వారం (Weekly)',
+    periodMonthly: 'ఈ నెల (Monthly)',
+    periodAllTime: 'మొత్తం (All Time)',
+    totalBusinessIncome: 'మొత్తం నికర ఆదాయం',
+    grossRevenue: 'మొత్తం ఆర్డర్ విలువ (Gross)',
+    totalOrderExpensesSummary: 'మొత్తం ఆర్డర్ ఖర్చులు',
+    averageMargin: 'నికర లాభాల శాతం',
+    addNewInvestment: 'కొత్త పెట్టుబడి',
+    editInvestment: 'పెట్టుబడి సవరించండి',
+    investmentAmount: 'పెట్టుబడి మొత్తం (₹)',
+    investmentDate: 'పెట్టుబడి తేదీ',
+    investmentPurpose: 'ఉద్దేశ్యం / వివరాలు (ఉదా. పాత్రలు, మిషన్లు, నిల్వ)',
+    totalInvestmentToDate: 'ఇప్పటివరకు మొత్తం పెట్టుబడి',
+    investmentSummaryTitle: 'పెట్టుబడి vs ఆదాయం vs నికర లాభం',
+    netProfit: 'నికర వ్యాపార లాభం',
+    netLoss: 'నికర లోటు',
+    roi: 'పెట్టుబడిపై రాబడి (ROI)',
+    noInvestmentsFound: 'ఇంకా ఎలాంటి వ్యాపార పెట్టుబడులు నమోదు కాలేదు',
+    exportBusinessCsv: 'వ్యాపార CSV ఎగుమతి',
+    exportBusinessCsvDesc: 'మీ అన్ని ఆర్డర్లు మరియు ఖర్చుల వివరాలను Excel / స్ప్రెడ్‌షీట్ CSV ఫైల్‌గా భద్రపరచండి.',
+    exportScopeAllBiz: 'మొత్తం డేటా (ఆర్డర్లు, ఖర్చులు & లాభం)',
+    exportScopeOrdersOnly: 'ఆర్డర్లు మాత్రమే',
+    exportScopeExpensesOnly: 'ఖర్చులు మాత్రమే',
+    exportCsvSaved: 'వ్యాపార CSV విజయవంతంగా భద్రపరచబడింది',
+    exportCsvShared: 'వ్యాపార CSV షేర్ చేయబడింది',
   },
 };
 

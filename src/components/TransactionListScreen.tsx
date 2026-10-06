@@ -19,8 +19,11 @@ import {
   CalendarDays,
   Edit2,
   Check,
+  History,
+  Tag,
+  Clock,
 } from 'lucide-react';
-import { TransactionEntity, NavigationTab, DateRangeOption, ExpenseCategory } from '../types';
+import { TransactionEntity, NavigationTab, DateRangeOption, ExpenseCategory, TransactionType } from '../types';
 import { EXPENSE_CATEGORIES } from '../db/roomDatabase';
 import {
   M3Card,
@@ -30,6 +33,14 @@ import {
   getCategoryColor,
 } from './M3Components';
 import { useLanguage } from '../i18n/LanguageContext';
+import { saveCsvToAndroidFileSystem } from '../utils/csvExport';
+import {
+  getStoredRecentSearches,
+  saveRecentSearchTerm,
+  removeRecentSearchTerm,
+  clearAllRecentSearches,
+  COMMON_CATEGORY_KEYWORDS,
+} from '../utils/recentSearches';
 
 export function TransactionListScreen({
   transactions,
@@ -62,7 +73,7 @@ export function TransactionListScreen({
   onRestoreLastDeleted?: () => Promise<void>;
   lastDeletedTransaction?: TransactionEntity | null;
   onClearLastDeleted?: () => void;
-  onNavigate: (tab: NavigationTab) => void;
+  onNavigate: (tab: NavigationTab, initialType?: TransactionType) => void;
   searchQuery: string;
   setSearchQuery: (q: string) => void;
   selectedFilter: 'ALL' | 'INCOME' | 'EXPENSE';
@@ -83,6 +94,48 @@ export function TransactionListScreen({
   const [editAmount, setEditAmount] = useState<string>('');
   const [editCategory, setEditCategory] = useState<string>('');
   const [editDate, setEditDate] = useState<string>('');
+
+  // Recent Searches State
+  const [recentSearches, setRecentSearches] = useState<string[]>(() => getStoredRecentSearches());
+
+  const handleSelectRecentSearch = (term: string) => {
+    if (searchQuery.toLowerCase().trim() === term.toLowerCase().trim()) {
+      // Toggle off if already selected
+      setSearchQuery('');
+    } else {
+      setSearchQuery(term);
+      const updated = saveRecentSearchTerm(term);
+      setRecentSearches(updated);
+    }
+  };
+
+  const handleRemoveRecentSearch = (term: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const updated = removeRecentSearchTerm(term);
+    setRecentSearches(updated);
+  };
+
+  const handleClearAllRecentSearches = () => {
+    const updated = clearAllRecentSearches();
+    setRecentSearches(updated);
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      if (searchQuery.trim().length >= 2) {
+        const updated = saveRecentSearchTerm(searchQuery);
+        setRecentSearches(updated);
+      }
+      (e.target as HTMLInputElement).blur();
+    }
+  };
+
+  const handleSearchBlur = () => {
+    if (searchQuery.trim().length >= 2) {
+      const updated = saveRecentSearchTerm(searchQuery);
+      setRecentSearches(updated);
+    }
+  };
 
   // Group filtered transactions by date for clean timeline view
   const groupedByDate = filteredTransactions.reduce((acc, tx) => {
@@ -125,25 +178,17 @@ export function TransactionListScreen({
     setIsEditing(false);
   };
 
-  const handleExportCSV = () => {
+  const handleExportCSV = async () => {
     if (filteredTransactions.length === 0) return;
-    const headers = ['ID', 'Type', 'Category/Source', 'Description', 'Amount (INR)', 'Date'];
-    const rows = filteredTransactions.map((t) => [
-      t.id,
-      t.type,
-      `"${t.category}"`,
-      `"${t.description.replace(/"/g, '""')}"`,
-      t.amount,
-      t.date,
-    ]);
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `finance-ledger-${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      await saveCsvToAndroidFileSystem(
+        filteredTransactions,
+        'finance-transactions-ledger',
+        'Current-View'
+      );
+    } catch (err: any) {
+      console.warn('CSV export error:', err);
+    }
   };
 
   return (
@@ -172,7 +217,9 @@ export function TransactionListScreen({
           )}
           <button
             id="tx-screen-add-entry-btn"
-            onClick={() => onNavigate('add_entry')}
+            onClick={() =>
+              onNavigate('add_entry', selectedFilter === 'INCOME' ? 'INCOME' : selectedFilter === 'EXPENSE' ? 'EXPENSE' : undefined)
+            }
             className="flex items-center gap-1 px-3 py-1.5 bg-[#005cb2] text-white rounded-xl text-xs font-bold hover:bg-[#004a77] transition-all cursor-pointer shadow-xs"
           >
             <Plus className="w-4 h-4" />
@@ -192,6 +239,8 @@ export function TransactionListScreen({
             placeholder={t.searchPlaceholder}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleSearchKeyDown}
+            onBlur={handleSearchBlur}
             className="w-full bg-[#f0f4f9] dark:bg-[#2a2d33] border border-transparent focus:border-[#005cb2] rounded-xl pl-10 pr-9 py-2 text-xs md:text-sm text-[#1a1c1e] dark:text-[#e2e2e6] placeholder:text-[#94a3b8] focus:outline-none focus:ring-2 focus:ring-[#005cb2]/30"
           />
           {searchQuery && (
@@ -202,6 +251,108 @@ export function TransactionListScreen({
               <X className="w-4 h-4" />
             </button>
           )}
+        </div>
+
+        {/* Recent Searches & Quick Filters Section */}
+        <div className="space-y-2 pt-0.5">
+          {/* Header */}
+          <div className="flex items-center justify-between px-0.5 text-xs">
+            <div className="flex items-center gap-1.5 font-bold text-neutral-600 dark:text-neutral-300">
+              <History className="w-3.5 h-3.5 text-[#005cb2] dark:text-[#a5c8ff]" />
+              <span>{t.recentSearches}</span>
+            </div>
+            {recentSearches.length > 0 && (
+              <button
+                id="btn-clear-recent-searches"
+                type="button"
+                onClick={handleClearAllRecentSearches}
+                className="text-[11px] font-semibold text-neutral-400 hover:text-rose-500 dark:hover:text-rose-400 cursor-pointer transition-colors"
+              >
+                {t.clearRecentSearches}
+              </button>
+            )}
+          </div>
+
+          {/* Recent Searches Chips */}
+          {recentSearches.length > 0 ? (
+            <div className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-0.5 pb-1">
+              {recentSearches.map((item) => {
+                const isActive = searchQuery.toLowerCase().trim() === item.toLowerCase().trim();
+                const IconComponent = getCategoryIcon(item);
+
+                return (
+                  <div
+                    key={item}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handleSelectRecentSearch(item)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        handleSelectRecentSearch(item);
+                      }
+                    }}
+                    title={`Filter by "${item}"`}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold shrink-0 transition-all cursor-pointer border select-none ${
+                      isActive
+                        ? 'bg-[#005cb2] text-white border-[#005cb2] shadow-xs'
+                        : 'bg-[#f0f4f9] dark:bg-[#2a2d33] text-neutral-700 dark:text-neutral-300 border-neutral-200/80 dark:border-neutral-700/80 hover:bg-[#e2e8f0] dark:hover:bg-[#343840]'
+                    }`}
+                  >
+                    <IconComponent
+                      className={`w-3.5 h-3.5 ${
+                        isActive ? 'text-white' : 'text-[#005cb2] dark:text-[#a5c8ff]'
+                      }`}
+                    />
+                    <span>{item}</span>
+                    <button
+                      type="button"
+                      onClick={(e) => handleRemoveRecentSearch(item, e)}
+                      title={`Remove "${item}" from history`}
+                      className={`p-0.5 rounded-full hover:bg-black/15 dark:hover:bg-white/20 transition-colors ml-0.5 cursor-pointer ${
+                        isActive ? 'text-white/80 hover:text-white' : 'text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'
+                      }`}
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-[11px] text-neutral-400 dark:text-neutral-500 italic px-0.5">
+              {t.searchHistoryEmpty}
+            </p>
+          )}
+
+          {/* Quick Common Category Filter Pills */}
+          <div className="pt-0.5 space-y-1">
+            <div className="flex items-center justify-between px-0.5">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+                {t.quickFilters}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-0.5">
+              {COMMON_CATEGORY_KEYWORDS.map((cat) => {
+                const isActive = searchQuery.toLowerCase().trim() === cat.toLowerCase().trim();
+                const IconComp = getCategoryIcon(cat);
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => handleSelectRecentSearch(cat)}
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium shrink-0 transition-all cursor-pointer border ${
+                      isActive
+                        ? 'bg-neutral-800 text-white dark:bg-neutral-100 dark:text-neutral-900 border-transparent shadow-2xs font-semibold'
+                        : 'bg-white dark:bg-[#1a1c1e] text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-700/60 hover:border-neutral-400'
+                    }`}
+                  >
+                    <IconComp className="w-2.5 h-2.5 opacity-70" />
+                    <span>{cat}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
         {/* 2. Filter by Type: All / Income / Expense */}
@@ -287,7 +438,14 @@ export function TransactionListScreen({
                 id="select-category-filter"
                 value={selectedCategoryFilter}
                 disabled={selectedFilter === 'INCOME'}
-                onChange={(e) => setSelectedCategoryFilter(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setSelectedCategoryFilter(val);
+                  if (val !== 'ALL') {
+                    const updated = saveRecentSearchTerm(val);
+                    setRecentSearches(updated);
+                  }
+                }}
                 className={`w-full bg-[#f0f4f9] dark:bg-[#2a2d33] border border-transparent focus:border-[#005cb2] text-xs font-semibold text-[#1a1c1e] dark:text-[#e2e2e6] rounded-xl px-3 py-1.5 pr-7 appearance-none cursor-pointer focus:outline-none ${
                   selectedFilter === 'INCOME' ? 'opacity-40 cursor-not-allowed' : ''
                 }`}
@@ -405,19 +563,35 @@ export function TransactionListScreen({
         <M3Card className="p-8 text-center flex flex-col items-center justify-center mt-2">
           <Sparkles className="w-8 h-8 text-neutral-400 mb-2" />
           <p className="text-sm font-bold text-[#1a1c1e] dark:text-[#e2e2e6]">
-            {t.noTransactions}
+            {searchQuery || selectedCategoryFilter !== 'ALL' || selectedFilter !== 'ALL'
+              ? t.noMatchingTransactions
+              : t.noTransactions}
           </p>
           <p className="text-xs text-neutral-500 mt-1 max-w-xs">
             {searchQuery || selectedCategoryFilter !== 'ALL' || selectedFilter !== 'ALL'
-              ? 'Try changing your search query or filters to see more results.'
+              ? t.tryAdjustingFilters
               : t.logFirstEntry}
           </p>
-          <button
-            onClick={() => onNavigate('add_entry')}
-            className="mt-4 px-4 py-2 bg-[#005cb2] hover:bg-[#004a77] text-white text-xs font-bold rounded-xl cursor-pointer shadow-xs"
-          >
-            {t.navAddEntry}
-          </button>
+          {searchQuery || selectedCategoryFilter !== 'ALL' || selectedFilter !== 'ALL' ? (
+            <button
+              onClick={() => {
+                setSearchQuery('');
+                setSelectedFilter('ALL');
+                setSelectedCategoryFilter('ALL');
+                setDateRangeOption('THIS_MONTH');
+              }}
+              className="mt-4 px-4 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-[#1a1c1e] dark:text-[#e2e2e6] text-xs font-bold rounded-xl cursor-pointer border border-neutral-300 dark:border-neutral-700 transition-colors"
+            >
+              {t.resetFilters}
+            </button>
+          ) : (
+            <button
+              onClick={() => onNavigate('add_entry')}
+              className="mt-4 px-4 py-2 bg-[#005cb2] hover:bg-[#004a77] text-white text-xs font-bold rounded-xl cursor-pointer shadow-xs"
+            >
+              {t.navAddEntry}
+            </button>
+          )}
         </M3Card>
       ) : (
         <div className="flex flex-col gap-4">

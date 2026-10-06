@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import {
   Calendar,
@@ -33,11 +33,19 @@ export function AddEntryScreen({
 }: {
   onAddIncome: (amount: number, source: IncomeSource | string, date: string, description?: string) => Promise<any>;
   onAddExpense: (amount: number, category: ExpenseCategory | string, description: string, date: string) => Promise<any>;
-  onNavigate: (tab: NavigationTab) => void;
+  onNavigate: (tab: NavigationTab, initialType?: TransactionType) => void;
   defaultType?: TransactionType;
 }) {
   const { t, getCategoryName } = useLanguage();
   const [entryType, setEntryType] = useState<TransactionType>(defaultType);
+
+  // Synchronize entryType whenever defaultType prop changes
+  useEffect(() => {
+    if (defaultType) {
+      setEntryType(defaultType);
+      setError(null);
+    }
+  }, [defaultType]);
 
   // Common Form Fields
   const [amount, setAmount] = useState<string>('');
@@ -203,14 +211,14 @@ export function AddEntryScreen({
         }}
         options={[
           {
-            value: 'EXPENSE',
-            label: t.addExpenseTab,
-            icon: TrendingDown,
-          },
-          {
             value: 'INCOME',
             label: t.addIncomeTab,
             icon: TrendingUp,
+          },
+          {
+            value: 'EXPENSE',
+            label: t.addExpenseTab,
+            icon: TrendingDown,
           },
         ]}
       />

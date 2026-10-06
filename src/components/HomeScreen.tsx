@@ -5,6 +5,7 @@ import {
   TrendingDown,
   Wallet,
   Plus,
+  Minus,
   ArrowRight,
   PieChart as PieChartIcon,
   ChevronLeft,
@@ -19,12 +20,15 @@ import {
   Download,
   Smartphone,
   ShieldCheck,
+  Mic,
+  Briefcase,
 } from 'lucide-react';
-import { FinanceUiState, NavigationTab, TransactionEntity } from '../types';
+import { FinanceUiState, NavigationTab, TransactionEntity, TransactionType } from '../types';
 import { M3Card, formatCurrency, formatDateLabel, getCategoryColor, getCategoryIcon } from './M3Components';
 import { MonthlyReportModal } from './MonthlyReportModal';
 import { generateMonthlyPDFReport } from '../utils/pdfGenerator';
 import { useLanguage } from '../i18n/LanguageContext';
+import { businessDatabase } from '../db/businessDatabase';
 
 export function HomeScreen({
   uiState,
@@ -34,16 +38,14 @@ export function HomeScreen({
   setSelectedMonth,
   goToPrevMonth,
   goToNextMonth,
-  onOpenAndroidModal,
 }: {
   uiState: FinanceUiState;
-  onNavigate: (tab: NavigationTab) => void;
+  onNavigate: (tab: NavigationTab, initialType?: TransactionType) => void;
   onSelectTransaction?: (tx: TransactionEntity) => void;
   selectedMonth: string;
   setSelectedMonth: (month: string) => void;
   goToPrevMonth: () => void;
   goToNextMonth: () => void;
-  onOpenAndroidModal?: () => void;
 }) {
   const { t, language, getCategoryName } = useLanguage();
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
@@ -242,9 +244,14 @@ export function HomeScreen({
           {/* Total Income Card (Green) */}
           <motion.div
             whileHover={{ y: -2 }}
+            whileTap={{ scale: 0.98 }}
             transition={{ duration: 0.2 }}
             id="card-total-income"
-            className="rounded-2xl p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/50 shadow-xs flex flex-col justify-between"
+            role="button"
+            tabIndex={0}
+            onClick={() => onNavigate('add_entry', 'INCOME')}
+            title="Click to add income"
+            className="rounded-2xl p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/50 shadow-xs flex flex-col justify-between cursor-pointer group select-none"
           >
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-1.5">
@@ -255,7 +262,7 @@ export function HomeScreen({
                   {t.totalIncome}
                 </span>
               </div>
-              <ArrowUpRight className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <ArrowUpRight className="w-4 h-4 text-emerald-600 dark:text-emerald-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
             </div>
             <div>
               <span className="text-xl md:text-2xl font-extrabold text-emerald-700 dark:text-emerald-300 tracking-tight block">
@@ -270,9 +277,14 @@ export function HomeScreen({
           {/* Total Spent Card (Red) */}
           <motion.div
             whileHover={{ y: -2 }}
+            whileTap={{ scale: 0.98 }}
             transition={{ duration: 0.2 }}
             id="card-total-spent"
-            className="rounded-2xl p-4 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/50 shadow-xs flex flex-col justify-between"
+            role="button"
+            tabIndex={0}
+            onClick={() => onNavigate('add_entry', 'EXPENSE')}
+            title="Click to add expense"
+            className="rounded-2xl p-4 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/50 shadow-xs flex flex-col justify-between cursor-pointer group select-none"
           >
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-1.5">
@@ -283,7 +295,7 @@ export function HomeScreen({
                   {t.totalSpent}
                 </span>
               </div>
-              <ArrowDownRight className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+              <ArrowDownRight className="w-4 h-4 text-rose-600 dark:text-rose-400 group-hover:translate-x-0.5 group-hover:translate-y-0.5 transition-transform" />
             </div>
             <div>
               <span className="text-xl md:text-2xl font-extrabold text-rose-700 dark:text-rose-300 tracking-tight block">
@@ -297,11 +309,12 @@ export function HomeScreen({
         </div>
       </div>
 
-      {/* Quick Action Bar (Add Income / Add Expense) */}
-      <div className="grid grid-cols-2 gap-2.5">
+      {/* Quick Action Bar (Add Income / Add Expense / Voice Entry) */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
         <button
           id="home-quick-add-income-btn"
-          onClick={() => onNavigate('add_entry')}
+          type="button"
+          onClick={() => onNavigate('add_entry', 'INCOME')}
           className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs tracking-wide shadow-xs active:scale-[0.98] transition-all cursor-pointer"
         >
           <Plus className="w-4 h-4 stroke-[2.5]" />
@@ -309,13 +322,54 @@ export function HomeScreen({
         </button>
         <button
           id="home-quick-add-expense-btn"
-          onClick={() => onNavigate('add_entry')}
+          type="button"
+          onClick={() => onNavigate('add_entry', 'EXPENSE')}
           className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs tracking-wide shadow-xs active:scale-[0.98] transition-all cursor-pointer"
         >
-          <Plus className="w-4 h-4 stroke-[2.5]" />
+          <Minus className="w-4 h-4 stroke-[2.5]" />
           <span>{t.addExpenseTab}</span>
         </button>
+        <button
+          id="home-quick-voice-entry-btn"
+          type="button"
+          onClick={() => onNavigate('add_entry')}
+          className="col-span-2 sm:col-span-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#005cb2] hover:bg-[#004a77] text-white font-bold text-xs tracking-wide shadow-xs active:scale-[0.98] transition-all cursor-pointer"
+        >
+          <Mic className="w-4 h-4" />
+          <span>{language === 'te' ? 'వాయిస్ ఎంట్రీ 🎙️' : 'Voice Entry 🎙️'}</span>
+        </button>
       </div>
+
+      {/* Business Tracker (Orders & Finance) Banner */}
+      <M3Card
+        id="home-business-tracker-banner"
+        onClick={() => onNavigate('business')}
+        className="p-4 bg-gradient-to-r from-blue-900 to-indigo-950 text-white cursor-pointer hover:shadow-md transition-all group border-blue-800"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-white/15 text-white shrink-0 group-hover:scale-105 transition-transform">
+              <Briefcase className="w-5 h-5 text-amber-300" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="text-sm font-bold text-white tracking-tight">
+                  {t.navBusiness}
+                </h4>
+                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-400 text-neutral-900 uppercase tracking-wider">
+                  Orders & Finance
+                </span>
+              </div>
+              <p className="text-xs text-blue-200 mt-0.5">
+                Track customer orders, linked expenses, net income & equipment investments
+              </p>
+            </div>
+          </div>
+          <div className="p-2 rounded-xl bg-white/10 group-hover:bg-white/20 transition-colors shrink-0 ml-2">
+            <ArrowRight className="w-4 h-4 text-white" />
+          </div>
+        </div>
+      </M3Card>
 
       {/* Category Spending Breakdown for the Selected Month */}
       {categoryBreakdown.filter((c) => c.total > 0).length > 0 && (
@@ -380,40 +434,6 @@ export function HomeScreen({
               })}
           </div>
         </M3Card>
-      )}
-
-      {/* Android Mobile Free App Banner */}
-      {onOpenAndroidModal && (
-        <div
-          onClick={onOpenAndroidModal}
-          className="bg-gradient-to-r from-[#005cb2]/10 via-[#38bdf8]/15 to-[#005cb2]/5 dark:from-[#005cb2]/25 dark:via-[#38bdf8]/20 dark:to-transparent border border-[#005cb2]/25 dark:border-[#38bdf8]/30 p-3.5 rounded-2xl flex items-center justify-between cursor-pointer hover:shadow-md transition-all group"
-        >
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#005cb2] to-[#003566] text-white flex items-center justify-center shadow-xs shrink-0 group-hover:scale-105 transition-transform">
-              <Smartphone className="w-5 h-5" />
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-extrabold text-neutral-900 dark:text-white truncate">
-                  {t.installAndroidTitle}
-                </span>
-                <span className="px-1.5 py-0.2 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[9px] font-black uppercase tracking-wider shrink-0">
-                  {t.androidFreeBadge}
-                </span>
-              </div>
-              <p className="text-[11px] text-neutral-500 dark:text-neutral-400 truncate mt-0.5">
-                1-tap phone install • 100% Offline Room DB • Zero Ads
-              </p>
-            </div>
-          </div>
-
-          <div className="shrink-0 ml-2">
-            <span className="px-3 py-1.5 bg-[#005cb2] group-hover:bg-[#004a77] text-white rounded-xl text-xs font-bold shadow-xs flex items-center gap-1 transition-colors">
-              <span>{t.installAndroidBtn}</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </span>
-          </div>
-        </div>
       )}
 
       {/* Recent Activity for this month */}

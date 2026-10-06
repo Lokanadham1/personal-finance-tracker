@@ -10,6 +10,8 @@ import {
   RefreshCw,
   HelpCircle,
   AlertCircle,
+  Keyboard,
+  CheckCircle2,
 } from 'lucide-react';
 import { ExpenseCategory, IncomeSource, TransactionType } from '../types';
 import { parseVoiceCommand, ParsedVoiceCommand } from '../utils/voiceCommandParser';
@@ -19,13 +21,15 @@ import { useLanguage } from '../i18n/LanguageContext';
 interface VoiceCommandWidgetProps {
   onApplyParsedCommand: (cmd: ParsedVoiceCommand) => void;
   onAutoSubmitParsedCommand: (cmd: ParsedVoiceCommand) => Promise<void>;
+  autoStart?: boolean;
 }
 
 export function VoiceCommandWidget({
   onApplyParsedCommand,
   onAutoSubmitParsedCommand,
+  autoStart = false,
 }: VoiceCommandWidgetProps) {
-  const { t, getCategoryName } = useLanguage();
+  const { t, language, getCategoryName } = useLanguage();
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [parsedResult, setParsedResult] = useState<ParsedVoiceCommand | null>(null);
@@ -33,8 +37,11 @@ export function VoiceCommandWidget({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isAutoSaving, setIsAutoSaving] = useState(false);
   const [showExamples, setShowExamples] = useState(false);
+  const [showManualDictation, setShowManualDictation] = useState(false);
+  const [dictationInput, setDictationInput] = useState('');
 
   const recognitionRef = useRef<any>(null);
+  const audioStreamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
     const SpeechRecognition =
@@ -43,31 +50,87 @@ export function VoiceCommandWidget({
     if (!SpeechRecognition) {
       setSpeechSupported(false);
     }
+
+    if (autoStart) {
+      startListening();
+    }
+
+    return () => {
+      stopListening();
+    };
   }, []);
 
-  const startListening = () => {
+  const cleanupAudioStream = () => {
+    if (audioStreamRef.current) {
+      audioStreamRef.current.getTracks().forEach((track) => {
+        try {
+          track.stop();
+        } catch (e) {
+          // ignore
+        }
+      });
+      audioStreamRef.current = null;
+    }
+  };
+
+  const startListening = async () => {
     setErrorMessage(null);
     setTranscript('');
     setParsedResult(null);
+
+    // 1. Explicitly request microphone stream to trigger Android native permission dialog in APK / WebView
+    try {
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioStreamRef.current = stream;
+      }
+    } catch (permErr: any) {
+      console.warn('Microphone permission request result:', permErr);
+      if (
+        permErr.name === 'NotAllowedError' ||
+        permErr.name === 'PermissionDeniedError' ||
+        permErr.message?.includes('denied')
+      ) {
+        setErrorMessage(
+          language === 'te'
+            ? 'మైక్రోఫోన్ అనుమతి నిరాకరించబడింది. దయచేసి ఫోన్ సెట్టింగ్స్ > Apps > Money Mitra లో మైక్రోఫోన్ అనుమతించండి.'
+            : 'Microphone permission denied. Please allow microphone in Android Settings > Apps > Money Mitra > Permissions.'
+        );
+        setIsListening(false);
+        return;
+      }
+    }
 
     const SpeechRecognition =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
       setSpeechSupported(false);
-      setErrorMessage('Web Speech API is not supported in this browser. Try Chrome, Edge, or Safari.');
+      setShowManualDictation(true);
+      setErrorMessage(
+        language === 'te'
+          ? 'ఈ పరికరంలో Web Speech API అందుబాటులో లేదు. క్రింది బాక్స్‌లో మీ కీబోర్డ్ మైక్ ద్వారా మాట్లాడండి.'
+          : 'Web Speech API is unavailable in this WebView. You can use your keyboard microphone or speech typing below.'
+      );
+      setIsListening(false);
       return;
     }
 
     try {
       if (recognitionRef.current) {
-        recognitionRef.current.abort();
+        try {
+          recognitionRef.current.abort();
+        } catch (e) {
+          // ignore
+        }
       }
 
       const recognition = new SpeechRecognition();
       recognition.continuous = false;
       recognition.interimResults = true;
-      recognition.lang = 'en-IN'; // Works great for Indian English / general English
+      recognition.maxAlternatives = 1;
+      // Support bilingual recognition based on active language
+      recognition.lang = language === 'te' ? 'te-IN' : 'en-IN';
 
       recognition.onstart = () => {
         setIsListening(true);
@@ -89,32 +152,60 @@ export function VoiceCommandWidget({
       recognition.onerror = (event: any) => {
         console.warn('Speech recognition error:', event.error);
         if (event.error === 'not-allowed') {
-          setErrorMessage('Microphone access was denied. Please allow microphone permissions in your browser.');
+          setErrorMessage(
+            language === 'te'
+              ? 'మైక్రోఫోన్ అనుమతి నిరాకరించబడింది. దయచేసి అనుమతించండి.'
+              : 'Microphone access denied. Please grant microphone permission.'
+          );
         } else if (event.error === 'no-speech') {
-          setErrorMessage('No speech was detected. Please try again.');
+          setErrorMessage(
+            language === 'te'
+              ? 'ఏమీ వినపడలేదు. దయచేసి మళ్లీ మైక్ నొక్కి మాట్లాడండి.'
+              : 'No speech was detected. Please tap mic and try again.'
+          );
+        } else if (event.error === 'service-not-allowed' || event.error === 'network') {
+          setShowManualDictation(true);
+          setErrorMessage(
+            language === 'te'
+              ? 'వాయిస్ సర్వీస్ కనెక్ట్ కాలేదు. క్రింది బాక్స్‌లో మీ కీబోర్డ్ మైక్ ఉపయోగించండి.'
+              : 'Voice recognition service unavailable. Use keyboard voice typing or the dictation box below.'
+          );
         } else {
-          setErrorMessage(`Speech error: ${event.error}`);
+          setErrorMessage(`Speech recognition notice: ${event.error}`);
         }
         setIsListening(false);
+        cleanupAudioStream();
       };
 
       recognition.onend = () => {
         setIsListening(false);
+        cleanupAudioStream();
       };
 
       recognitionRef.current = recognition;
       recognition.start();
     } catch (err: any) {
       console.error('Failed to start speech recognition:', err);
-      setErrorMessage('Failed to start microphone. Please try again.');
+      setShowManualDictation(true);
+      setErrorMessage(
+        language === 'te'
+          ? 'మైక్రోఫోన్ ప్రారంభించడంలో సమస్య ఉంది. క్రింది వాయిస్ టైపింగ్ బాక్స్ ఉపయోగించండి.'
+          : 'Could not initialize speech recognition. Use the voice dictation box below.'
+      );
       setIsListening(false);
+      cleanupAudioStream();
     }
   };
 
   const stopListening = () => {
     if (recognitionRef.current) {
-      recognitionRef.current.stop();
+      try {
+        recognitionRef.current.stop();
+      } catch (e) {
+        // ignore
+      }
     }
+    cleanupAudioStream();
     setIsListening(false);
   };
 
@@ -125,10 +216,20 @@ export function VoiceCommandWidget({
     setErrorMessage(null);
   };
 
+  const handleManualDictationChange = (text: string) => {
+    setDictationInput(text);
+    setTranscript(text);
+    if (text.trim().length > 2) {
+      const parsed = parseVoiceCommand(text);
+      setParsedResult(parsed);
+    } else {
+      setParsedResult(null);
+    }
+  };
+
   const handleApply = () => {
     if (parsedResult) {
       onApplyParsedCommand(parsedResult);
-      // Optional: reset or keep
     }
   };
 
@@ -138,6 +239,7 @@ export function VoiceCommandWidget({
       try {
         await onAutoSubmitParsedCommand(parsedResult);
         setTranscript('');
+        setDictationInput('');
         setParsedResult(null);
       } finally {
         setIsAutoSaving(false);
@@ -176,14 +278,24 @@ export function VoiceCommandWidget({
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setShowExamples(!showExamples)}
-          className="text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 p-1 rounded-lg text-xs flex items-center gap-1 cursor-pointer font-medium"
-        >
-          <HelpCircle className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">{t.examples}</span>
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setShowManualDictation(!showManualDictation)}
+            className="text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 p-1.5 rounded-lg text-xs flex items-center gap-1 cursor-pointer font-medium"
+            title="Keyboard Voice / Dictation Input"
+          >
+            <Keyboard className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowExamples(!showExamples)}
+            className="text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 p-1.5 rounded-lg text-xs flex items-center gap-1 cursor-pointer font-medium"
+          >
+            <HelpCircle className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">{t.examples}</span>
+          </button>
+        </div>
       </div>
 
       {/* Voice Trigger Banner */}
@@ -193,10 +305,10 @@ export function VoiceCommandWidget({
             id="btn-voice-input-mic"
             type="button"
             onClick={isListening ? stopListening : startListening}
-            className={`w-12 h-12 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-md ${
+            className={`w-13 h-13 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-md ${
               isListening
                 ? 'bg-rose-600 text-white ring-4 ring-rose-500/40 animate-pulse scale-105'
-                : 'bg-[#005cb2] hover:bg-[#004a77] text-white hover:scale-105'
+                : 'bg-[#005cb2] hover:bg-[#004a77] text-white hover:scale-105 active:scale-95'
             }`}
             title={isListening ? 'Stop listening' : 'Start speaking voice command'}
           >
@@ -232,9 +344,32 @@ export function VoiceCommandWidget({
                 : t.tapMicToSpeak}
             </p>
           </div>
-          <p className="text-xs text-neutral-600 dark:text-neutral-300 italic truncate mt-0.5 min-h-[18px]">
-            {transcript ? `"${transcript}"` : t.samplePromptNotice}
-          </p>
+          
+          {/* Animated Waveform when listening */}
+          {isListening ? (
+            <div className="flex items-center justify-center sm:justify-start gap-1 my-1">
+              {[0.4, 0.9, 0.5, 0.8, 1.0, 0.6, 0.9, 0.4].map((scale, idx) => (
+                <motion.div
+                  key={idx}
+                  animate={{ height: [4, scale * 16, 4] }}
+                  transition={{
+                    repeat: Infinity,
+                    duration: 0.8,
+                    delay: idx * 0.1,
+                    ease: 'easeInOut',
+                  }}
+                  className="w-1 bg-rose-500 rounded-full"
+                />
+              ))}
+              <span className="text-[11px] text-rose-600 dark:text-rose-400 font-semibold ml-2">
+                {language === 'te' ? 'మాట్లాడుతున్న మాటలను వింటున్నాము...' : 'Listening to microphone...'}
+              </span>
+            </div>
+          ) : (
+            <p className="text-xs text-neutral-600 dark:text-neutral-300 italic truncate mt-0.5 min-h-[18px]">
+              {transcript ? `"${transcript}"` : t.samplePromptNotice}
+            </p>
+          )}
         </div>
 
         {transcript && !isListening && (
@@ -252,11 +387,48 @@ export function VoiceCommandWidget({
 
       {/* Error Notice */}
       {errorMessage && (
-        <div className="flex items-center gap-2 p-2.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs rounded-xl">
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          <span className="flex-1">{errorMessage}</span>
+        <div className="flex items-start gap-2 p-2.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs rounded-xl">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="font-semibold">{errorMessage}</p>
+            <p className="text-[11px] opacity-80 mt-0.5">
+              {language === 'te'
+                ? 'చిట్కా: మీరు కీబోర్డ్ మైక్ బటన్ ద్వారా కూడా మాట్లాడి నింపవచ్చు.'
+                : 'Tip: You can also tap the keyboard icon above and speak via Gboard / phone voice typing.'}
+            </p>
+          </div>
         </div>
       )}
+
+      {/* Manual Voice Dictation Input for WebViews / Gboard */}
+      <AnimatePresence>
+        {showManualDictation && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="space-y-1.5 pt-1 overflow-hidden"
+          >
+            <div className="p-3 bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/60 rounded-xl space-y-2">
+              <label className="text-[11px] font-bold text-[#005cb2] dark:text-[#a5c8ff] flex items-center justify-between">
+                <span>{language === 'te' ? 'కీబోర్డ్ వాయిస్ టైపింగ్ / డిక్టేషన్:' : 'Keyboard Voice Dictation / Speech Input:'}</span>
+                <span className="text-[10px] text-neutral-500 font-normal">
+                  {language === 'te' ? 'కీబోర్డ్ మైక్ బటన్ నొక్కండి' : 'Tap keyboard 🎙️ button to speak'}
+                </span>
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={dictationInput}
+                  onChange={(e) => handleManualDictationChange(e.target.value)}
+                  placeholder={language === 'te' ? 'ఉదా: "Spent 450 on petrol for transport"' : 'e.g. "Spent 500 for dinner on food"'}
+                  className="w-full bg-white dark:bg-[#1a1c1e] text-xs text-[#1a1c1e] dark:text-[#e2e2e6] px-3 py-2 rounded-lg border border-blue-300 dark:border-blue-700 focus:outline-none focus:ring-2 focus:ring-[#005cb2]"
+                />
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Example Prompt Chips */}
       <AnimatePresence>

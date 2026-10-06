@@ -144,6 +144,7 @@ export function M3NavigationBar({
   const { t } = useLanguage();
   const tabs = [
     { id: 'home' as NavigationTab, label: t.navHome, icon: Home },
+    { id: 'business' as NavigationTab, label: t.ordersTab, icon: Briefcase },
     { id: 'transactions' as NavigationTab, label: t.navTransactions, icon: ArrowUpDown },
     { id: 'add_entry' as NavigationTab, label: t.navAddEntry, icon: PlusCircle },
   ];

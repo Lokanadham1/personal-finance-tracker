@@ -38,5 +38,43 @@ export interface FinanceUiState {
   lastDeletedTransaction: TransactionEntity | null;
 }
 
-export type NavigationTab = 'home' | 'transactions' | 'add_entry' | 'breakdown';
+export type NavigationTab = 'home' | 'business' | 'transactions' | 'add_entry' | 'breakdown';
 
+export type OrderStatus = 'Pending' | 'In Progress' | 'Completed' | 'Delivered';
+
+export type OrderExpenseType = 'Groceries / Raw Materials' | 'Packaging' | 'Delivery' | 'Other';
+
+export interface OrderEntity {
+  id: string;
+  customerName: string;
+  orderDate: string; // YYYY-MM-DD
+  itemDetails: string;
+  quantity: string; // e.g. "50 Plates", "25 Meals", "10"
+  orderPrice: number; // Amount customer is paying in ₹
+  orderStatus: OrderStatus;
+  notes?: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface OrderExpenseEntity {
+  id: string;
+  orderId: string; // Linked order ID
+  expenseType: OrderExpenseType;
+  amount: number;
+  date: string; // YYYY-MM-DD
+  notes?: string;
+  createdAt: number;
+}
+
+export interface BusinessInvestmentEntity {
+  id: string;
+  amount: number;
+  date: string; // YYYY-MM-DD
+  purpose: string; // e.g., Equipment, Raw Ingredients Stock, Packaging Materials
+  notes?: string;
+  createdAt: number;
+}
+
+export type BusinessSubView = 'orders' | 'expenses' | 'income' | 'investments';
+export type BusinessPeriodFilter = 'daily' | 'weekly' | 'monthly' | 'all';

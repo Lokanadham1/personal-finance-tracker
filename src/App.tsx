@@ -2,17 +2,15 @@ import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import {
   PieChart as PieChartIcon,
-  Code2,
   Settings,
   Plus,
   ArrowUpDown,
   Home,
-  Smartphone,
   Check,
   RotateCcw,
   Sparkles,
 } from 'lucide-react';
-import { NavigationTab, TransactionEntity } from './types';
+import { NavigationTab, TransactionEntity, TransactionType } from './types';
 import { useFinanceViewModel } from './viewmodel/useFinanceViewModel';
 import { useLanguage } from './i18n/LanguageContext';
 import {
@@ -26,16 +24,21 @@ import { HomeScreen } from './components/HomeScreen';
 import { AddEntryScreen } from './components/AddEntryScreen';
 import { TransactionListScreen } from './components/TransactionListScreen';
 import { CategoryBreakdownScreen } from './components/CategoryBreakdownScreen';
-import { KotlinCodeViewerModal } from './components/KotlinCodeViewerModal';
+import { BusinessTrackerScreen } from './components/BusinessTrackerScreen';
 import { AndroidSettingsModal } from './components/AndroidSettingsModal';
-import { AndroidInstallModal } from './components/AndroidInstallModal';
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState<NavigationTab>('home');
-  const [isKotlinModalOpen, setIsKotlinModalOpen] = useState<boolean>(false);
+  const [entryInitialType, setEntryInitialType] = useState<TransactionType>('EXPENSE');
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState<boolean>(false);
-  const [isAndroidModalOpen, setIsAndroidModalOpen] = useState<boolean>(false);
   const { t, language } = useLanguage();
+
+  const handleNavigate = (tab: NavigationTab, initialType?: TransactionType) => {
+    if (initialType) {
+      setEntryInitialType(initialType);
+    }
+    setCurrentTab(tab);
+  };
 
   const {
     uiState,
@@ -74,6 +77,11 @@ export default function App() {
           title: t.appTitle,
           subtitle: t.subHome,
         };
+      case 'business':
+        return {
+          title: t.navBusiness,
+          subtitle: t.subBusiness,
+        };
       case 'transactions':
         return {
           title: t.navTransactions,
@@ -81,7 +89,7 @@ export default function App() {
         };
       case 'add_entry':
         return {
-          title: t.navAddEntry,
+          title: entryInitialType === 'INCOME' ? t.addIncomeTab : t.addExpenseTab,
           subtitle: t.subAddEntry,
         };
       case 'breakdown':
@@ -117,30 +125,6 @@ export default function App() {
               {/* Language Switcher Button / Toggle */}
               <LanguageToggleSwitch />
 
-              {/* Install on Android Mobile (Free) Button */}
-              <button
-                id="btn-open-android-install"
-                onClick={() => setIsAndroidModalOpen(true)}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/60 text-[#005cb2] dark:text-[#a5c8ff] text-xs font-bold cursor-pointer transition-colors border border-blue-200 dark:border-blue-800/60 shadow-2xs"
-                title={t.installAndroidTitle}
-              >
-                <Smartphone className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">{t.installAndroidBtn}</span>
-                <span className="px-1 py-0.2 rounded text-[9px] bg-emerald-600 text-white font-extrabold">
-                  Free
-                </span>
-              </button>
-
-              <button
-                id="btn-open-kotlin-code-viewer"
-                onClick={() => setIsKotlinModalOpen(true)}
-                className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 text-xs font-semibold cursor-pointer transition-colors border border-emerald-200 dark:border-emerald-800/60"
-                title="View Kotlin & Jetpack Compose Source Code"
-              >
-                <Code2 className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">{t.kotlinSource}</span>
-              </button>
-
               <button
                 id="btn-open-room-db-settings"
                 onClick={() => setIsSettingsModalOpen(true)}
@@ -166,12 +150,25 @@ export default function App() {
               >
                 <HomeScreen
                   uiState={uiState}
-                  onNavigate={setCurrentTab}
+                  onNavigate={handleNavigate}
                   selectedMonth={selectedMonth}
                   setSelectedMonth={setSelectedMonth}
                   goToPrevMonth={goToPrevMonth}
                   goToNextMonth={goToNextMonth}
-                  onOpenAndroidModal={() => setIsAndroidModalOpen(true)}
+                />
+              </motion.div>
+            )}
+
+            {currentTab === 'business' && (
+              <motion.div
+                key="business"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.18 }}
+              >
+                <BusinessTrackerScreen
+                  onNavigate={handleNavigate}
                 />
               </motion.div>
             )}
@@ -193,7 +190,7 @@ export default function App() {
                   onRestoreLastDeleted={restoreLastDeleted}
                   lastDeletedTransaction={uiState.lastDeletedTransaction}
                   onClearLastDeleted={clearLastDeleted}
-                  onNavigate={setCurrentTab}
+                  onNavigate={handleNavigate}
                   searchQuery={searchQuery}
                   setSearchQuery={setSearchQuery}
                   selectedFilter={selectedFilter}
@@ -212,7 +209,7 @@ export default function App() {
 
             {currentTab === 'add_entry' && (
               <motion.div
-                key="add_entry"
+                key={`add_entry_${entryInitialType}`}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
@@ -221,7 +218,8 @@ export default function App() {
                 <AddEntryScreen
                   onAddIncome={addIncome}
                   onAddExpense={addExpense}
-                  onNavigate={setCurrentTab}
+                  onNavigate={handleNavigate}
+                  defaultType={entryInitialType}
                 />
               </motion.div>
             )}
@@ -236,7 +234,7 @@ export default function App() {
               >
                 <CategoryBreakdownScreen
                   uiState={uiState}
-                  onNavigate={setCurrentTab}
+                  onNavigate={handleNavigate}
                 />
               </motion.div>
             )}
@@ -246,7 +244,7 @@ export default function App() {
         {/* Material 3 Bottom Navigation Bar with 3 Tabs: Home, Transactions, Add Entry */}
         <M3NavigationBar
           currentTab={currentTab}
-          onSelectTab={setCurrentTab}
+          onSelectTab={handleNavigate}
         />
 
         {/* Undo Delete Snackbar */}
@@ -262,12 +260,6 @@ export default function App() {
         </AnimatePresence>
       </div>
 
-      {/* Kotlin Code & Jetpack Compose Architecture Modal */}
-      <KotlinCodeViewerModal
-        isOpen={isKotlinModalOpen}
-        onClose={() => setIsKotlinModalOpen(false)}
-      />
-
       {/* Room DB Settings & Backup Modal */}
       <AndroidSettingsModal
         isOpen={isSettingsModalOpen}
@@ -275,14 +267,8 @@ export default function App() {
         onResetData={resetData}
         onClearData={clearAllData}
         transactionCount={uiState.transactions.length}
-        onOpenAndroidInstallModal={() => setIsAndroidModalOpen(true)}
-      />
-
-      {/* Android Mobile Free App Install Modal */}
-      <AndroidInstallModal
-        isOpen={isAndroidModalOpen}
-        onClose={() => setIsAndroidModalOpen(false)}
-        onOpenKotlinModal={() => setIsKotlinModalOpen(true)}
+        currentTransactions={filteredTransactions}
+        allTransactions={uiState.transactions}
       />
     </div>
   );
